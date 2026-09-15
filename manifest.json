@@ -1,10 +1,12 @@
 {
+  "id": "/DAILY-SPENDING-TRACKING-/",
   "name": "Mera Hisaab - Daily Ledger",
   "short_name": "Mera Hisaab",
   "description": "Track every rupee in and out, across all your banks - credit, debit, online and offline.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
+  "categories": ["finance", "productivity"],
   "orientation": "portrait",
   "background_color": "#EAE6DA",
   "theme_color": "#1F2D3D",
