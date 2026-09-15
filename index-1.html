@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Mera Hisaab — Daily Ledger</title>
+<meta name="theme-color" content="#1F2D3D" />
+<meta name="description" content="Track every rupee in and out, across all your banks." />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icon-192.png" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Source+Sans+3:wght@400;600;700&display=swap');
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #EAE6DA;
+    color: #1F2D3D;
+    padding: 18px 14px 40px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  .tabular { font-variant-numeric: tabular-nums; }
+  input, select {
+    font-family: inherit;
+    font-size: 15px;
+    background: #F5F2E8;
+    border: 1px solid #C9C2AC;
+    color: #1F2D3D;
+    padding: 8px 10px;
+    border-radius: 3px;
+    width: 100%;
+  }
+  input:focus, select:focus { outline: 2px solid #A67C3D; outline-offset: 1px; }
+  label { font-size: 12px; color: #5B5745; display: block; margin-bottom: 3px; }
+  button { font-family: inherit; cursor: pointer; }
+  .seg-btn {
+    border: 1px solid #C9C2AC;
+    background: #F5F2E8;
+    padding: 7px 4px;
+    font-size: 13px;
+    color: #5B5745;
+    border-radius: 3px;
+  }
+  .seg-btn.active { background: #1F2D3D; color: #EAE6DA; border-color: #1F2D3D; }
+  .header-box {
+    border: 1px solid #1F2D3D; border-radius: 4px; padding: 16px 16px 14px;
+    position: relative; background: #F1EDE0;
+  }
+  .stamp {
+    position: absolute; top: 12px; right: 12px; width: 46px; height: 46px;
+    border-radius: 50%; border: 2px solid #A67C3D; display: flex; align-items: center;
+    justify-content: center; transform: rotate(-8deg); color: #A67C3D;
+    font-family: 'Fraunces', serif; font-size: 10px; font-weight: 600; text-align: center; line-height: 1.1;
+  }
+  .title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 22px; }
+  .subtitle { font-size: 12.5px; color: #5B5745; margin: 2px 0 14px; }
+  .totals { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .totals > div { padding-top: 6px; }
+  .add-btn {
+    width: 100%; padding: 12px; background: #1F2D3D; color: #EAE6DA;
+    border: none; border-radius: 4px; font-size: 15px; font-weight: 600; margin-top: 14px;
+  }
+  .form-box { border: 1px solid #C9C2AC; border-radius: 4px; padding: 14px; background: #F5F2E8; margin-top: 14px; }
+  .row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .save-btn { flex: 1; padding: 10px; background: #1F2D3D; color: #EAE6DA; border: none; border-radius: 3px; font-weight: 600; }
+  .cancel-btn { padding: 10px 14px; background: transparent; color: #5B5745; border: 1px solid #C9C2AC; border-radius: 3px; }
+  .filters { display: flex; gap: 6px; margin: 16px 0 8px; flex-wrap: wrap; }
+  .divider { width: 1px; background: #C9C2AC; margin: 2px 4px; }
+  .ledger { border: 1px solid #C9C2AC; border-radius: 4px; overflow: hidden; }
+  .ledger-head { display: grid; grid-template-columns: 64px 1fr 74px; gap: 8px; padding: 8px 10px; background: #1F2D3D; color: #EAE6DA; font-size: 11.5px; }
+  .ledger-row { display: grid; grid-template-columns: 64px 1fr 74px; gap: 8px; padding: 9px 10px; border-top: 1px solid #DAD4BF; font-size: 13px; align-items: start; }
+  .empty { padding: 24px; text-align: center; color: #5B5745; font-size: 13.5px; }
+  .footer-note { margin-top: 12px; font-size: 11px; color: #5B5745; text-align: center; }
+  .err { color: #A83232; font-size: 12.5px; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+  <div class="header-box">
+    <div class="stamp">MERA<br/>HISAAB</div>
+    <div class="title">Daily Ledger</div>
+    <div class="subtitle">every rupee in and out, across every bank</div>
+    <div class="totals">
+      <div style="border-top:2px solid #2E6F40;">
+        <div style="font-size:11px;color:#5B5745;">Income</div>
+        <div id="totalCredit" class="tabular" style="font-size:16px;font-weight:700;color:#2E6F40;">₹0</div>
+      </div>
+      <div style="border-top:2px solid #A83232;">
+        <div style="font-size:11px;color:#5B5745;">Spent</div>
+        <div id="totalDebit" class="tabular" style="font-size:16px;font-weight:700;color:#A83232;">₹0</div>
+      </div>
+      <div style="border-top:2px solid #1F2D3D;">
+        <div style="font-size:11px;color:#5B5745;">Balance</div>
+        <div id="totalBalance" class="tabular" style="font-size:16px;font-weight:700;">₹0</div>
+      </div>
+    </div>
+  </div>
+
+  <button class="add-btn" id="openFormBtn">+ Add a transaction</button>
+
+  <form class="form-box" id="entryForm" style="display:none;">
+    <div class="row">
+      <button type="button" class="seg-btn active" data-kind="debit" style="flex:1;">Debit (money out)</button>
+      <button type="button" class="seg-btn" data-kind="credit" style="flex:1;">Credit (money in)</button>
+    </div>
+    <div class="grid2">
+      <div><label>Date</label><input type="date" id="fDate" /></div>
+      <div><label>Amount (₹)</label><input type="number" inputmode="decimal" placeholder="0.00" id="fAmount" /></div>
+    </div>
+    <div class="grid2">
+      <div><label>Bank / account</label>
+        <select id="fBank">
+          <option>SBI</option><option>HDFC</option><option>ICICI</option><option>Axis</option>
+          <option>Kotak</option><option>PNB</option><option>BOB</option><option>Cash</option><option>Other</option>
+        </select>
+      </div>
+      <div><label>Category</label>
+        <select id="fCategory">
+          <option>Food</option><option>Travel</option><option>Bills</option><option>Fuel</option>
+          <option>Groceries</option><option>Shopping</option><option>Salary</option><option>Rent</option>
+          <option>Medical</option><option>Recharge</option><option>Transfer</option><option>Other</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom:10px;">
+      <label>Mode</label>
+      <div class="row" style="margin-bottom:0;">
+        <button type="button" class="seg-btn active" data-mode="online" style="flex:1;">Online</button>
+        <button type="button" class="seg-btn" data-mode="offline" style="flex:1;">Offline</button>
+      </div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label>Note (optional)</label>
+      <input type="text" id="fNote" placeholder="e.g. Chai, petrol, gift" />
+    </div>
+    <div class="err" id="formErr" style="display:none;"></div>
+    <div class="row" style="margin-bottom:0;">
+      <button type="submit" class="save-btn">Save entry</button>
+      <button type="button" class="cancel-btn" id="cancelBtn">Cancel</button>
+    </div>
+  </form>
+
+  <div class="filters">
+    <button class="seg-btn active" data-ftype="all">All</button>
+    <button class="seg-btn" data-ftype="credit">Credit</button>
+    <button class="seg-btn" data-ftype="debit">Debit</button>
+    <div class="divider"></div>
+    <button class="seg-btn active" data-fmode="all">Online + Offline</button>
+    <button class="seg-btn" data-fmode="online">Online</button>
+    <button class="seg-btn" data-fmode="offline">Offline</button>
+  </div>
+
+  <div class="ledger">
+    <div class="ledger-head"><div>Date</div><div>Particulars</div><div style="text-align:right;">Amount</div></div>
+    <div id="ledgerBody"></div>
+  </div>
+
+  <div class="footer-note" id="footerNote">Saved on this device. 0 entries total.</div>
+
+<script>
+const STORAGE_KEY = "mera-hisaab-entries";
+let entries = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+let kind = "debit", mode = "online", filterType = "all", filterMode = "all";
+
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function formatINR(n){
+  const abs = Math.abs(n);
+  return abs.toLocaleString("en-IN", { maximumFractionDigits: 2, minimumFractionDigits: abs % 1 === 0 ? 0 : 2 });
+}
+function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); render(); }
+
+document.getElementById("fDate").value = todayStr();
+
+document.querySelectorAll('[data-kind]').forEach(b => b.addEventListener('click', () => {
+  kind = b.dataset.kind;
+  document.querySelectorAll('[data-kind]').forEach(x => x.classList.toggle('active', x === b));
+}));
+document.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => {
+  mode = b.dataset.mode;
+  document.querySelectorAll('[data-mode]').forEach(x => x.classList.toggle('active', x === b));
+}));
+document.querySelectorAll('[data-ftype]').forEach(b => b.addEventListener('click', () => {
+  filterType = b.dataset.ftype;
+  document.querySelectorAll('[data-ftype]').forEach(x => x.classList.toggle('active', x === b));
+  render();
+}));
+document.querySelectorAll('[data-fmode]').forEach(b => b.addEventListener('click', () => {
+  filterMode = b.dataset.fmode;
+  document.querySelectorAll('[data-fmode]').forEach(x => x.classList.toggle('active', x === b));
+  render();
+}));
+
+document.getElementById("openFormBtn").addEventListener("click", () => {
+  document.getElementById("entryForm").style.display = "block";
+  document.getElementById("openFormBtn").style.display = "none";
+});
+document.getElementById("cancelBtn").addEventListener("click", () => {
+  document.getElementById("entryForm").style.display = "none";
+  document.getElementById("openFormBtn").style.display = "block";
+  document.getElementById("formErr").style.display = "none";
+});
+
+document.getElementById("entryForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const amt = parseFloat(document.getElementById("fAmount").value);
+  const errEl = document.getElementById("formErr");
+  if (!amt || amt <= 0) {
+    errEl.textContent = "Enter an amount greater than zero.";
+    errEl.style.display = "block";
+    return;
+  }
+  errEl.style.display = "none";
+  entries.unshift({
+    id: uid(),
+    createdAt: Date.now(),
+    date: document.getElementById("fDate").value || todayStr(),
+    bank: document.getElementById("fBank").value,
+    kind, mode,
+    category: document.getElementById("fCategory").value,
+    note: document.getElementById("fNote").value.trim(),
+    amount: amt
+  });
+  document.getElementById("fAmount").value = "";
+  document.getElementById("fNote").value = "";
+  document.getElementById("fDate").value = todayStr();
+  document.getElementById("entryForm").style.display = "none";
+  document.getElementById("openFormBtn").style.display = "block";
+  save();
+});
+
+function removeEntry(id){
+  entries = entries.filter(e => e.id !== id);
+  save();
+}
+window.removeEntry = removeEntry;
+
+function render(){
+  let credit = 0, debit = 0;
+  entries.forEach(e => { if (e.kind === "credit") credit += e.amount; else debit += e.amount; });
+  const balance = credit - debit;
+  document.getElementById("totalCredit").textContent = "₹" + formatINR(credit);
+  document.getElementById("totalDebit").textContent = "₹" + formatINR(debit);
+  const balEl = document.getElementById("totalBalance");
+  balEl.textContent = (balance < 0 ? "-" : "") + "₹" + formatINR(balance);
+  balEl.style.color = balance >= 0 ? "#1F2D3D" : "#A83232";
+
+  const filtered = entries
+    .filter(e => filterType === "all" ? true : e.kind === filterType)
+    .filter(e => filterMode === "all" ? true : e.mode === filterMode)
+    .sort((a,b) => a.date < b.date ? 1 : a.date > b.date ? -1 : b.createdAt - a.createdAt);
+
+  const body = document.getElementById("ledgerBody");
+  if (filtered.length === 0) {
+    body.innerHTML = `<div class="empty">${entries.length === 0 ? "No entries yet. Add your first transaction above." : "Nothing matches this filter."}</div>`;
+  } else {
+    body.innerHTML = filtered.map((e,i) => `
+      <div class="ledger-row" style="background:${i % 2 === 0 ? '#F5F2E8' : '#EFEADB'};">
+        <div style="color:#5B5745;font-size:11.5px;">${e.date.slice(5).split('-').reverse().join('/')}</div>
+        <div>
+          <div style="font-weight:600;">${escapeHtml(e.note || e.category)}</div>
+          <div style="font-size:11px;color:#5B5745;margin-top:1px;">${e.bank} · ${e.category} · ${e.mode === 'online' ? 'Online' : 'Offline'}</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="tabular" style="font-weight:700;color:${e.kind === 'credit' ? '#2E6F40' : '#A83232'};">
+            ${e.kind === 'credit' ? '+' : '−'}₹${formatINR(e.amount)}
+          </div>
+          <button onclick="removeEntry('${e.id}')" style="background:none;border:none;color:#A67C3D;font-size:11px;padding:0;margin-top:3px;text-decoration:underline;">remove</button>
+        </div>
+      </div>
+    `).join("");
+  }
+  document.getElementById("footerNote").textContent = `Saved on this device. ${entries.length} ${entries.length === 1 ? 'entry' : 'entries'} total.`;
+}
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+render();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
